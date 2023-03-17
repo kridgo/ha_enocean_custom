@@ -45,6 +45,8 @@ SENSOR_TYPE_TEMPERATURE = "temperature"
 SENSOR_TYPE_WINDOWHANDLE = "windowhandle"
 SENSOR_TYPE_SHUTTERCONTACT = "shuttercontact"
 
+ATTR_SETPOINT = "SetPoint"
+ATTR_SLIDESWITCH = "SlideSwitch"
 
 @dataclass
 class EnOceanSensorEntityDescriptionMixin:
@@ -243,6 +245,17 @@ class EnOceanTemperatureSensor(EnOceanSensor):
         self._scale_max = scale_max
         self.range_from = range_from
         self.range_to = range_to
+        self.setpoint = 0
+        self.slideswitch = 0
+
+    @property
+    def extra_state_attributes(self):
+        """Return entity specific state attributes."""
+        self._attrs = {
+            ATTR_SETPOINT: self.setpoint,
+            ATTR_SLIDESWITCH: self.slideswitch,
+        }
+        return self._attrs
 
     def value_changed(self, packet):
         """Update the internal state of the sensor."""
@@ -254,6 +267,8 @@ class EnOceanTemperatureSensor(EnOceanSensor):
         temperature = temp_scale / temp_range * (raw_val - self.range_from)
         temperature += self._scale_min
         self._attr_native_value = round(temperature, 1)
+        self.setpoint = packet.data[2]
+        self.slideswitch = packet.data[4]&1
         self.schedule_update_ha_state()
 
 
