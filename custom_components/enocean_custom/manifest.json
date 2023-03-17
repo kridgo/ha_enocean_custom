@@ -1,7 +1,7 @@
 {
   "domain": "enocean_custom",
   "name": "EnOcean - custom",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "codeowners": ["@kridgo"],
   "config_flow": true,
   "documentation": "https://github.com/kridgo/ha_enocean_custom",
