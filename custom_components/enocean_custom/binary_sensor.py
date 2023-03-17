@@ -21,6 +21,10 @@ DEFAULT_NAME = "EnOcean binary sensor"
 DEPENDENCIES = ["enocean"]
 EVENT_BUTTON_PRESSED = "button_pressed"
 
+ATTR_ONOFF = "OnOff"
+ATTR_WHICH = "Which"
+ATTR_REPEATED_TELEGRAM = "Repeated telegram"
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_ID): vol.All(cv.ensure_list, [vol.Coerce(int)]),
@@ -58,6 +62,7 @@ class EnOceanBinarySensor(EnOceanEntity, BinarySensorEntity):
         self._device_class = device_class
         self.which = -1
         self.onoff = -1
+        self.repeated_telegram = -1
         self._attr_unique_id = f"{combine_hex(dev_id)}-{device_class}"
 
     @property
@@ -69,6 +74,16 @@ class EnOceanBinarySensor(EnOceanEntity, BinarySensorEntity):
     def device_class(self):
         """Return the class of this sensor."""
         return self._device_class
+
+    @property
+    def extra_state_attributes(self):
+        """Return entity specific state attributes."""
+        self._attrs = {
+            ATTR_ONOFF: self.onoff,
+            ATTR_WHICH: self.which,
+            ATTR_REPEATED_TELEGRAM: self.repeated_telegram,
+        }
+        return self._attrs
 
     def value_changed(self, packet):
         """Fire an event with the data that have changed.
@@ -84,11 +99,21 @@ class EnOceanBinarySensor(EnOceanEntity, BinarySensorEntity):
         """
         # Energy Bow
         pushed = None
-
-        if packet.data[6] == 0x30:
+        
+        # take first byte for pushed status
+        if packet.data[6]//16 == 3:
             pushed = 1
-        elif packet.data[6] == 0x20:
+        elif packet.data[6]//16 == 2:
             pushed = 0
+
+        # take second byte for repeated status
+        self.repeated_telegram = packet.data[6]%16
+
+        # set state
+        if pushed == 1:
+            self._attr_is_on = True
+        elif pushed == 0:
+            self._attr_is_on = False
 
         self.schedule_update_ha_state()
 
@@ -114,9 +139,11 @@ class EnOceanBinarySensor(EnOceanEntity, BinarySensorEntity):
         self.hass.bus.fire(
             EVENT_BUTTON_PRESSED,
             {
+                "name": self.dev_name,
                 "id": self.dev_id,
                 "pushed": pushed,
                 "which": self.which,
                 "onoff": self.onoff,
+                "repeated_telegram": self.repeated_telegram,
             },
         )
