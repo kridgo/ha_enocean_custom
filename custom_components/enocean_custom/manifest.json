@@ -1,10 +1,12 @@
 {
-  "domain": "enocean",
-  "name": "EnOcean",
-  "codeowners": ["@bdurrer"],
+  "domain": "enocean_custom",
+  "name": "EnOcean - custom",
+  "version": "0.1.0",
+  "codeowners": ["@kridgo"],
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/enocean",
+  "documentation": "https://github.com/kridgo/ha_enocean_custom",
+  "issue_tracker": "https://github.com/kridgo/ha_enocean_custom/issues",
   "iot_class": "local_push",
-  "loggers": ["enocean"],
+  "loggers": ["enocean_custom"],
   "requirements": ["enocean==0.50"]
 }
