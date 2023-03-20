@@ -8,7 +8,7 @@
 The official EnOcean integration for Home Assistant is currently not being extended by new functionality as the code needs a major refactory. Pull requests to add new sensors etc. are [not being accepted](https://github.com/home-assistant/core/pull/86461#discussion_r1084908489). That is why this custom integration was created. Also, the EnOcean protocol library being used by Home Assistant seems to be abandoned, that is why a fork is included in this custom integration.
 
 ## Installation
-1. [https://hacs.xyz/docs/setup/download/]
+1. [Install HACS](https://hacs.xyz/docs/setup/download/)
 2. Open HACS in your Home Assistant installation
 3. Add the repository URL to your HACS installation: `Integrations > Three Dots > Custom integrations > Add URL`
 4. Install `EnOcean Custom`
