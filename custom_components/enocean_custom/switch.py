@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from enocean.utils import combine_hex
+from .enocean.enocean.utils import combine_hex
 import voluptuous as vol
 
 from homeassistant.components.switch import PLATFORM_SCHEMA, SwitchEntity

@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from enocean.utils import combine_hex
+from .enocean.enocean.utils import combine_hex
 import voluptuous as vol
 
 from homeassistant.components.sensor import (
