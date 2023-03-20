@@ -10,7 +10,7 @@ The official EnOcean integration for Home Assistant is currently not being exten
 ## Installation
 1. [Install HACS](https://hacs.xyz/docs/setup/download/)
 2. Open HACS in your Home Assistant installation
-3. Add the repository URL to your HACS installation: `Integrations > Three Dots > Custom integrations > Add URL`
+3. Add the repository URL to your HACS installation as [custom repository](https://hacs.xyz/docs/faq/custom_repositories): `Integrations > Three Dots > Custom integrations > Add URL`
 4. Install `EnOcean Custom`
 
 ## Description
