@@ -14,7 +14,7 @@ The official EnOcean integration for Home Assistant is currently not being exten
 4. Install `EnOcean Custom`
 
 ## Description
-This custom integration uses the code of the [official EnOcean integration](https://www.home-assistant.io/integrations/enocean/) and the [EnOcean library, `kipe/enocean`](https://github.com/kipe/enocean) and implements bug fixes and new functionalities. To use EnOcean devices with this integration, specify the key `- platform: enocean_custom` when defining an EnOcean device in your `configuration.yaml`
+This custom integration uses the code of the [official EnOcean integration](https://www.home-assistant.io/integrations/enocean/) and the [EnOcean library, `kipe/enocean`](https://github.com/kipe/enocean) and implements bug fixes and new functionalities. To use EnOcean devices with this integration, specify the key `- platform: enocean_custom` instead of `- platform: enocean` when defining an EnOcean device in your `configuration.yaml`
 
 ### Binary sensors
 Binary sensors do not only trigger events but also have a state variable which may be `On` or `Off`. The state attributes `Onoff` and `Which` have been added to identify which pushbutton is being pressed. The state attribute `Repeated telegram` indicates if the received telegram was received by an EnOcean repeater.
