@@ -1,7 +1,7 @@
 """Support for EnOcean binary sensors."""
 from __future__ import annotations
 
-from .enocean.enocean.utils import combine_hex
+from .enocean_library.utils import combine_hex
 import voluptuous as vol
 
 from homeassistant.components.binary_sensor import (
