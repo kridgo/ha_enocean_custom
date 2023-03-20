@@ -1,0 +1,3 @@
+[submodule "custom_components/enocean_custom/enocean"]
+	path = custom_components/enocean_custom/enocean
+	url = https://github.com/kridgo/enocean
