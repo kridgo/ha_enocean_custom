@@ -3,14 +3,14 @@ import logging
 
 from homeassistant.const import Platform
 
-DOMAIN = "enocean"
-DATA_ENOCEAN = "enocean"
+DOMAIN = "enocean_custom"
+DATA_ENOCEAN = "enocean_custom"
 ENOCEAN_DONGLE = "dongle"
 
 ERROR_INVALID_DONGLE_PATH = "invalid_dongle_path"
 
-SIGNAL_RECEIVE_MESSAGE = "enocean.receive_message"
-SIGNAL_SEND_MESSAGE = "enocean.send_message"
+SIGNAL_RECEIVE_MESSAGE = "enocean_custom.receive_message"
+SIGNAL_SEND_MESSAGE = "enocean_custom.send_message"
 
 LOGGER = logging.getLogger(__package__)
 
