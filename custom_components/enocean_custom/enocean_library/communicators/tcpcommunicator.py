@@ -3,12 +3,12 @@ from __future__ import print_function, unicode_literals, division, absolute_impo
 import logging
 import socket
 
-from enocean.communicators.communicator import Communicator
+from .communicator import Communicator
 
 
 class TCPCommunicator(Communicator):
     ''' Socket communicator class for EnOcean radio '''
-    logger = logging.getLogger('enocean.communicators.TCPCommunicator')
+    logger = logging.getLogger('enocean_library.communicators.TCPCommunicator')
 
     def __init__(self, host='', port=9637):
         super(TCPCommunicator, self).__init__()
