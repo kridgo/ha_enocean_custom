@@ -108,6 +108,8 @@ class Packet(object):
             - remaining buffer
             - Packet -object (if message was valid, else None)
         '''
+        logger.debug("parse_msg called with buf=%s", buf)
+        
         # If the buffer doesn't contain 0x55 (start char)
         # the message isn't needed -> ignore
         if 0x55 not in buf:
@@ -121,6 +123,7 @@ class Packet(object):
             opt_len = buf[3]
         except IndexError:
             # If the fields don't exist, message is incomplete
+            logger.warning("Message incomplete, buf: %s", buf)
             return PARSE_RESULT.INCOMPLETE, buf, None
 
         # Header: 6 bytes, data, optional data and data checksum
