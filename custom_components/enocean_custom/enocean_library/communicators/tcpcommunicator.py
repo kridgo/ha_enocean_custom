@@ -8,7 +8,8 @@ from .communicator import Communicator
 
 class TCPCommunicator(Communicator):
     ''' Socket communicator class for EnOcean radio '''
-    logger = logging.getLogger('enocean_library.communicators.TCPCommunicator')
+    #logger = logging.getLogger('enocean_library.communicators.TCPCommunicator')
+    logger = logging.getLogger(__name__)
 
     def __init__(self, host='', port=9637):
         super(TCPCommunicator, self).__init__()

@@ -17,7 +17,8 @@ class Packet(object):
     parse_msg() returns subclass, if one is defined for the data type.
     '''
     eep = EEP()
-    logger = logging.getLogger('enocean_library.protocol.packet')
+    #logger = logging.getLogger('enocean_library.protocol.packet')
+    logger = logging.getLogger(__name__)
 
     def __init__(self, packet_type, data=None, optional=None):
         self.packet_type = packet_type
