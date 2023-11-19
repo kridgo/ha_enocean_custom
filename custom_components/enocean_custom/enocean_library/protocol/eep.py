@@ -12,7 +12,6 @@ from .constants import RORG  # noqa: F401
 
 
 class EEP(object):
-    #logger = logging.getLogger('enocean_library.protocol.eep')
     logger = logging.getLogger(__name__)
 
     def __init__(self):

@@ -9,7 +9,6 @@ from .communicator import Communicator
 
 class SerialCommunicator(Communicator):
     ''' Serial port communicator class for EnOcean radio '''
-    #logger = logging.getLogger('enocean_library.communicators.SerialCommunicator')
     logger = logging.getLogger(__name__)
 
     def __init__(self, port='/dev/ttyAMA0', callback=None):

@@ -17,7 +17,6 @@ class Communicator(threading.Thread):
     Communicator base-class for EnOcean.
     Not to be used directly, only serves as base class for SerialCommunicator etc.
     '''
-    #logger = logging.getLogger('enocean_library.communicators.Communicator')
     logger = logging.getLogger(__name__)
 
     def __init__(self, callback=None, teach_in=True):

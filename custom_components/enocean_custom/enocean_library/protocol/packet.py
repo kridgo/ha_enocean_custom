@@ -17,7 +17,6 @@ class Packet(object):
     parse_msg() returns subclass, if one is defined for the data type.
     '''
     eep = EEP()
-    #logger = logging.getLogger('enocean_library.protocol.packet')
     logger = logging.getLogger(__name__)
 
     def __init__(self, packet_type, data=None, optional=None):
@@ -109,12 +108,13 @@ class Packet(object):
             - remaining buffer
             - Packet -object (if message was valid, else None)
         '''
-        logger.debug("parse_msg called with buf=%s", buf)
         
         # If the buffer doesn't contain 0x55 (start char)
         # the message isn't needed -> ignore
         if 0x55 not in buf:
             return PARSE_RESULT.INCOMPLETE, [], None
+
+        Packet.logger.debug("parse_msg called with buf=%s", buf)
 
         # Valid buffer starts from 0x55
         # Convert to list, as index -method isn't defined for bytearray
@@ -124,7 +124,7 @@ class Packet(object):
             opt_len = buf[3]
         except IndexError:
             # If the fields don't exist, message is incomplete
-            logger.warning("Message incomplete, buf: %s", buf)
+            Packet.logger.warning("Message incomplete, buf: %s", buf)
             return PARSE_RESULT.INCOMPLETE, buf, None
 
         # Header: 6 bytes, data, optional data and data checksum
