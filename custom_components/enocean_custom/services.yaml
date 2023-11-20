@@ -1,0 +1,4 @@
+climate_teach_in_actor:
+  target:
+    entity:
+      domain: climate

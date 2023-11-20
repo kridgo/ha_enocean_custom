@@ -1,14 +1,15 @@
 {
+  "title": "EnOcean Custom",
   "config": {
     "step": {
       "detect": {
-        "title": "Select the path to your ENOcean dongle",
+        "title": "Select the path to your EnOcean dongle",
         "data": {
           "path": "USB dongle path"
         }
       },
       "manual": {
-        "title": "Enter the path to your ENOcean dongle",
+        "title": "Enter the path to your EnOcean dongle",
         "data": {
           "path": "USB dongle path"
         }
@@ -20,6 +21,12 @@
     "abort": {
       "invalid_dongle_path": "Invalid dongle path",
       "single_instance_allowed": "[%key:common::config_flow::abort::single_instance_allowed%]"
+    }
+  },
+  "services": {
+    "climate_teach_in_actor": {
+      "name": "Send teach-in telegram to climate actor",
+      "description": "Send teach-in telegram to climate actor"
     }
   }
 }
