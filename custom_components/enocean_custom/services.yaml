@@ -1,4 +1,25 @@
 climate_teach_in_actor:
+  name: Send teach-in telegram to climate actor
+  description: Send teach-in telegram to climate actor
   target:
     entity:
       domain: climate
+send_packet:
+  name: Send EnOcean packet with dongle
+  description: Send EnOcean packet with dongle
+  fields:
+    packet_type:
+      example: 0x01
+      default: 0x01
+    optional:
+      example: 0x01
+      default: []
+    data:
+      example: [0xA5, 0xFF, 0xFF, 0xFF, 0xFF]
+      default: [0xD5, 0x00]
+    status:
+      example: 0x01
+      default: []
+    sender_id:
+      example: [0xA5, 0xFF, 0xFF, 0xFF, 0xFF]
+      default: [0xFF, 0xFF, 0xFF, 0xFF]

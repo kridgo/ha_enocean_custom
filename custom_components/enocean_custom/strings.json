@@ -27,6 +27,10 @@
     "climate_teach_in_actor": {
       "name": "Send teach-in telegram to climate actor",
       "description": "Send teach-in telegram to climate actor"
+    },
+    "send_packet": {
+      "name": "Send EnOcean packet with dongle",
+      "description": "Send EnOcean packet with dongle"
     }
   }
 }

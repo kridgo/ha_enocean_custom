@@ -17,6 +17,7 @@ LOGGER = logging.getLogger(__package__)
 PLATFORMS = [
     Platform.LIGHT,
     Platform.BINARY_SENSOR,
+    Platform.CLIMATE,
     Platform.SENSOR,
     Platform.SWITCH,
 ]

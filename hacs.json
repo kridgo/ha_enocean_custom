@@ -1,5 +1,5 @@
 {
     "name": "EnOcean Custom",
     "render_readme": true,
-    "domains": ["binary_sensor", "light", "sensor", "switch"]
+    "domains": ["binary_sensor", "climate", "light", "sensor", "switch"]
   }
