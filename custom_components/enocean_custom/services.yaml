@@ -1,6 +1,12 @@
 climate_teach_in_actor:
-  name: Send teach-in telegram to climate actor
+  name: Send teach-in telegram for thermostat to climate actor
   description: Send teach-in telegram to climate actor
+  target:
+    entity:
+      domain: climate
+climate_teach_in_actor_switch:
+  name: Send teach-in telegram for switch to climate actor
+  description: Send teach-in telegram for switch to climate actor
   target:
     entity:
       domain: climate
@@ -21,5 +27,5 @@ send_packet:
       example: 0x01
       default: []
     sender_id:
-      example: [0xA5, 0xFF, 0xFF, 0xFF, 0xFF]
+      example: [0xFF, 0xFF, 0xFF, 0xFF]
       default: [0xFF, 0xFF, 0xFF, 0xFF]
