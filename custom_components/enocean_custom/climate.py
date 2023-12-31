@@ -225,7 +225,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
         self._attr_preset_mode = PRESET_NONE
         self._attr_preset_modes = [PRESET_BOOST, PRESET_COMFORT, PRESET_SLEEP]
         self._attr_unique_id = generate_unique_id(dev_id, 0)
-        self._command_frequency = command_frequency*60
+        self._command_frequency = command_frequency
         self._pi_control_Kp = pi_control_Kp
         self._pi_control_Tn = pi_control_Tn
         self._pi_control_output = None
