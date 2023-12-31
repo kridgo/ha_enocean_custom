@@ -334,7 +334,12 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
             if self._pi_control_output is None:
                 self._pi_control_output = 0.0
             _LOGGER.warning(
-                "No previously saved temperature, setting to %s", self._pi_control_output
+                "No previously saved PI controller output, setting to %s", self._pi_control_output
+            )
+            if self._pi_control_integrator_state is None:
+                self._pi_control_integrator_state = 0.0
+            _LOGGER.warning(
+                "No previously saved PI integrator state, setting to %s", self._pi_control_integrator_state
             )
 
         # Set default state to off
