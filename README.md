@@ -69,7 +69,7 @@ Configuration variables:
   - `pi_control_Kp`: Parameter for the proportional controller (`%/K`), default: `5`. Make sure to program the heating controller accordingly.
   - `pi_control_Tn`: Parameter for the integral controller (`min`), default: `240`. Make sure to program the heating controller accordingly.
 
-  Example definition of a climate entity:
+Example definition of a climate entity:
 
 ```yaml
 climate:
