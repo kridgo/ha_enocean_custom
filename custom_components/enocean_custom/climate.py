@@ -4,8 +4,10 @@ from __future__ import annotations
 from typing import Any
 
 import logging
+import time
 import math
-from datetime import datetime
+import random
+from datetime import datetime, timedelta
 
 from .enocean_library.utils import combine_hex
 import voluptuous as vol
@@ -19,6 +21,7 @@ from homeassistant.components.climate import (
     PRESET_BOOST,
     PRESET_COMFORT,
     PRESET_SLEEP,
+    PRESET_AWAY,
     PRESET_NONE,
     ClimateEntity,
     ClimateEntityFeature,
@@ -46,6 +49,7 @@ from homeassistant.helpers.event import (
     EventStateChangedData,
     async_track_state_change_event,
     async_track_time_interval,
+    async_track_point_in_time,
 )
 
 from .const import DOMAIN, LOGGER
@@ -77,8 +81,10 @@ CONF_PI_CONTROL_KP = "pi_control_Kp"
 CONF_PI_CONTROL_TN = "pi_control_Tn"
 
 ATTR_PI_CONTROL_OUTPUT = "PI_control_output"
+ATTR_PI_CONTROL_UNIT = "PI_control_unit"
 ATTR_TEMPERATURE_COMFORT = "temperature_comfort"
 ATTR_TEMPERATURE_SLEEP = "temperature_sleep"
+ATTR_TEMPERATURE_AWAY =  "temperature_away"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -172,7 +178,6 @@ async def async_setup_platform(
         pi_control_Tn,
     )])
 
-    #platform = entity_platform.sync_get_current_platform()
     platform = entity_platform.EntityPlatform(
         hass=hass,
         logger=_LOGGER,
@@ -214,6 +219,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
         self._attr_target_temp = None
         self._attr_target_temp_comfort = None
         self._attr_target_temp_sleep = None
+        self._attr_target_temp_away = None
         self._target_temp_frost_protection = target_temp_frost_protection
         self._sensor_target_temp = None
         self._sensor_target_temp_range = sensor_target_temp_range
@@ -223,16 +229,22 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
         self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
         self._attr_hvac_mode = None
         self._attr_preset_mode = PRESET_NONE
-        self._attr_preset_modes = [PRESET_BOOST, PRESET_COMFORT, PRESET_SLEEP]
+        self._attr_preset_modes = [PRESET_BOOST, PRESET_COMFORT, PRESET_SLEEP, PRESET_AWAY]
         self._attr_unique_id = generate_unique_id(dev_id, 0)
         self._command_frequency = command_frequency
         self._pi_control_Kp = pi_control_Kp
         self._pi_control_Tn = pi_control_Tn
-        self._pi_control_output = None
+        self._attr_pi_control_output = None
+        self._attr_pi_control_unit = "%"
         self._pi_control_error = 0
         self._pi_control_update_time = datetime.now()
         self._pi_control_integrator_state = None
         
+    async def _async_create_timer(self, time=None):
+        async_track_time_interval(
+                self.hass, self._async_control_heating, self._command_frequency
+            )
+
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added."""
         await super().async_added_to_hass()
@@ -246,10 +258,12 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
 
         # Add timer to periodically send commands to heating actor
         # periodic commands are needed, otherwise the actor will switch to contingency operating mode
+        # wait for random time before enabling time interval, so that events for different entities will not fire all at once
+        random.seed(self._attr_unique_id)   # initialize random generator with different seed for each entity
         self.async_on_remove(
-            async_track_time_interval(
-                self.hass, self._async_control_heating, self._command_frequency
-            )
+            async_track_point_in_time(
+                    self.hass, self._async_create_timer, datetime.now() + timedelta( seconds = random.uniform(0,self._command_frequency.total_seconds()) )
+                )
         )
 
         @callback
@@ -292,6 +306,14 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
                     )
                 else:
                     self._attr_target_temp_sleep = float(old_state.attributes[ATTR_TEMPERATURE_SLEEP])
+                if old_state.attributes.get(ATTR_TEMPERATURE_AWAY) is None:
+                    self._attr_target_temp_away = self._target_temp_base - 5
+                    _LOGGER.warning(
+                        "Undefined target temperature for preset away, falling back to %s",
+                        self._attr_target_temp_away,
+                    )
+                else:
+                    self._attr_target_temp_away = float(old_state.attributes[ATTR_TEMPERATURE_AWAY])
             if (
                 self._attr_preset_modes
                 and old_state.attributes.get(ATTR_PRESET_MODE) in self._attr_preset_modes
@@ -299,16 +321,16 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
                 self._attr_preset_mode = old_state.attributes.get(ATTR_PRESET_MODE)
             if self._attr_hvac_mode is None and old_state.state:
                 self._attr_hvac_mode = old_state.state
-            if self._pi_control_output is None:
+            if self._attr_pi_control_output is None:
                 if old_state.attributes.get(ATTR_PI_CONTROL_OUTPUT) is None:
-                    self._pi_control_output = 0.0
+                    self._attr_pi_control_output = 0.0
                     _LOGGER.warning(
                         "Undefined PI control output, falling back to %s",
-                        self._pi_control_output,
+                        self._attr_pi_control_output,
                     )
                 else:
-                    self._pi_control_output = float(old_state.attributes[ATTR_PI_CONTROL_OUTPUT])
-                self._pi_control_integrator_state = self._pi_control_output
+                    self._attr_pi_control_output = float(old_state.attributes[ATTR_PI_CONTROL_OUTPUT])
+                self._pi_control_integrator_state = self._attr_pi_control_output
         else:
             # No previous state, try and restore defaults
             if self._attr_target_temp is None:
@@ -326,15 +348,20 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
             _LOGGER.warning(
                 "No previously saved temperature for preset sleep, setting to %s", self._attr_target_temp_sleep
             )
+            if self._attr_target_temp_away is None:
+                self._attr_target_temp_away = self._target_temp_base - 5
+            _LOGGER.warning(
+                "No previously saved temperature for preset away, setting to %s", self._attr_target_temp_away
+            )
             if self._attr_preset_mode is PRESET_NONE:
                 self._attr_preset_mode = PRESET_COMFORT
             _LOGGER.warning(
                 "No previously saved preset mode, setting to %s", self._attr_preset_mode
             )
-            if self._pi_control_output is None:
-                self._pi_control_output = 0.0
+            if self._attr_pi_control_output is None:
+                self._attr_pi_control_output = 0.0
             _LOGGER.warning(
-                "No previously saved PI controller output, setting to %s", self._pi_control_output
+                "No previously saved PI controller output, setting to %s", self._attr_pi_control_output
             )
             if self._pi_control_integrator_state is None:
                 self._pi_control_integrator_state = 0.0
@@ -343,7 +370,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
             )
 
         # Set default state to off
-        if self._attr_hvac_mode is None:
+        if self._attr_hvac_mode in [None, STATE_UNKNOWN, STATE_UNAVAILABLE]:
             self._attr_hvac_mode = HVACMode.OFF
 
         if self.hass.state == CoreState.running:
@@ -360,9 +387,11 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
     def extra_state_attributes(self):
         """Return entity specific state attributes."""
         self._attrs = {
-            ATTR_PI_CONTROL_OUTPUT: round(self._pi_control_output),
+            ATTR_PI_CONTROL_OUTPUT: round(self._attr_pi_control_output),
+            ATTR_PI_CONTROL_UNIT: self._attr_pi_control_unit,
             ATTR_TEMPERATURE_COMFORT: self._attr_target_temp_comfort,
             ATTR_TEMPERATURE_SLEEP: self._attr_target_temp_sleep,
+            ATTR_TEMPERATURE_AWAY: self._attr_target_temp_away,
         }
         return self._attrs
         
@@ -372,11 +401,11 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
 
         Need to be one of CURRENT_HVAC_*.
         """
-        if self._attr_hvac_mode == HVACMode.OFF:
-            return HVACAction.OFF
-        if self._pi_control_output < 5:
+        if self._attr_pi_control_output < 5:
             # consider controller output less than 5% as idle
             return HVACAction.IDLE
+        if self._attr_hvac_mode == HVACMode.OFF:
+            return HVACAction.OFF
         return HVACAction.HEATING
     
     @property
@@ -391,6 +420,8 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
         """Return the minimum temperature."""
         if self._attr_hvac_mode == HVACMode.OFF:
             return self._target_temp_frost_protection
+        elif self._attr_preset_mode == PRESET_BOOST:
+            return self.max_temp
         return self._target_temp_base - 10.0
 
     @property
@@ -437,7 +468,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
     async def _async_get_sensor_update(self, state: State) -> None:
         """Update thermostat with latest state from sensor."""
         try:
-            _LOGGER.debug(f"Received sensor update for {self.dev_name} with state {state.state}")
+            _LOGGER.debug(f"Received sensor update for {self.dev_name} with temp {state.state}°C, setPoint {state.attributes['SetPoint']}, SlideSwitch {state.attributes['SlideSwitch']}")
             # get temperature
             cur_temp = float(state.state)
             if not math.isfinite(cur_temp):
@@ -446,12 +477,16 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
             
             # get target temperature from setPoint
             target_temp_new = (state.attributes["SetPoint"]*2/255 - 1)*self._sensor_target_temp_range + self._target_temp_base
-            if self._sensor_target_temp is None:
-                self._sensor_target_temp = target_temp_new
             slideSwitch = state.attributes["SlideSwitch"]
             if not slideSwitch:
+                # slideSwitch set to night mode / temperature reduction
                 target_temp_new = max(target_temp_new - self._target_temp_reduction_night, self.min_temp)
+            if self._sensor_target_temp is None:
+                # first sensor update after restart, save sensor value but do not overwrite target temperature of climate entity
+                self._sensor_target_temp = target_temp_new
+            
             if abs(self._sensor_target_temp-target_temp_new) > self._sensor_target_temp_tolerance:
+                # SetPoint deviation in update greater than threshold, update climate entity with new target temperature
                 self._sensor_target_temp = target_temp_new
                 self._attr_hvac_mode = HVACMode.HEAT
                 self._attr_target_temp = target_temp_new
@@ -459,7 +494,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
                     self._attr_preset_mode = PRESET_COMFORT
                 else:
                     self._attr_preset_mode = PRESET_SLEEP
-            # update controller
+            
             await self._async_control_heating()
             self.async_write_ha_state()
         except ValueError as ex:
@@ -482,6 +517,8 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
                 self._attr_target_temp_comfort = self._attr_target_temp
             if self._attr_preset_mode == PRESET_SLEEP:
                 self._attr_target_temp_sleep = self._attr_target_temp
+            if self._attr_preset_mode == PRESET_AWAY:
+                self._attr_target_temp_away = self._attr_target_temp
             
             # set preset mode
             if preset_mode == PRESET_COMFORT:
@@ -490,22 +527,26 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
             if preset_mode == PRESET_SLEEP:
                 self._attr_target_temp = self._attr_target_temp_sleep
                 self._attr_preset_mode = PRESET_SLEEP
+            if preset_mode == PRESET_AWAY:
+                self._attr_target_temp = self._attr_target_temp_away
+                self._attr_preset_mode = PRESET_AWAY
             if preset_mode == PRESET_BOOST:
+                self._attr_target_temp = self.max_temp
                 self._attr_preset_mode = PRESET_BOOST
             await self._async_control_heating()
             self.async_write_ha_state()
 
     async def _async_control_heating(self, time=None):
         """Calculate controller commands and send to actor"""
+        periodic = ""
         if time is not None:
-            _LOGGER.debug(f"Update for {self.dev_name} invoked by periodic command.")
-        _LOGGER.debug(f"Update for {self.dev_name}, hvac_mode: {self._attr_hvac_mode}, preset_mode: {self._attr_preset_mode}, target_temperature: {self._attr_target_temp}.")
+            #_LOGGER.debug(f"Update for {self.dev_name} invoked by periodic command")
+            periodic = " invoked by periodic command"
+        _LOGGER.debug(f"Update for {self.dev_name}{periodic}, hvac_mode: {self._attr_hvac_mode}, preset_mode: {self._attr_preset_mode}, target_temperature: {self._attr_target_temp}.")
 
         # set target temperature depending on mode
         if self._attr_hvac_mode == HVACMode.OFF:
             target_temp = self._target_temp_frost_protection
-        elif self._attr_preset_mode == PRESET_BOOST:
-            target_temp = self.max_temp
         else:
             target_temp = self._attr_target_temp
 
@@ -515,14 +556,14 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
         pi_control_timedelta = (cur_time - self._pi_control_update_time).total_seconds()/60
         self._pi_control_update_time = cur_time
         # integrator anti-wind-up
-        if self._pi_control_output >= 100 or self._pi_control_output <= 0:
+        if self._attr_pi_control_output >= 100 or self._attr_pi_control_output <= 0:
             anti_wind_up = 0
         else:
             anti_wind_up = 1
         self._pi_control_integrator_state = self._pi_control_integrator_state + pi_control_timedelta * self._pi_control_Kp * anti_wind_up * self._pi_control_error
         ## new error
         self._pi_control_error = target_temp - self._attr_current_temperature
-        self._pi_control_output = min(max(self._pi_control_Kp * ( self._pi_control_error + 1/self._pi_control_Tn * self._pi_control_integrator_state ), 0), 100)
+        self._attr_pi_control_output = min(max(self._pi_control_Kp * ( self._pi_control_error + 1/self._pi_control_Tn * self._pi_control_integrator_state ), 0), 100)
 
         # Send command to heating actor
         ## thermostat packet
@@ -533,16 +574,17 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
             _LOGGER.info("Temperature set point greater than 255, clipping value.")
         elif setPoint < 0:
             setPoint = 0
-            _LOGGER.info("Temperature set point less than 0, clipping value.")
+            if not self._attr_hvac_mode == HVACMode.OFF:
+                _LOGGER.info("Temperature set point less than 0, clipping value.")
 
         ### calculate temperature in protocol format: 0...+40°C -> 255...0
         cur_temp_protocol = 255 - round( 6.375 * self._attr_current_temperature )
         if cur_temp_protocol > 255:
             cur_temp_protocol = 255
-            _LOGGER.info("Current temperature in protocol greater than 255, clipping value.")
+            _LOGGER.info("Current temperature protocol value greater than 255, clipping value.")
         elif cur_temp_protocol < 0:
             cur_temp_protocol = 0
-            _LOGGER.info("Current temperature less than 0, clipping value.")
+            _LOGGER.info("Current temperature protocol value less than 0, clipping value.")
         self.sendPacket([0x00, setPoint, cur_temp_protocol, 0b00001001])
         
         ## switch sensor packet
