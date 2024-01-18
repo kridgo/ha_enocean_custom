@@ -290,6 +290,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
                     )
                 else:
                     self._attr_target_temp = float(old_state.attributes[ATTR_TEMPERATURE])
+            if self._attr_target_temp_comfort is None:
                 if old_state.attributes.get(ATTR_TEMPERATURE_COMFORT) is None:
                     self._attr_target_temp_comfort = self._target_temp_base
                     _LOGGER.warning(
@@ -298,6 +299,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
                     )
                 else:
                     self._attr_target_temp_comfort = float(old_state.attributes[ATTR_TEMPERATURE_COMFORT])
+            if self._attr_target_temp_sleep is None:
                 if old_state.attributes.get(ATTR_TEMPERATURE_SLEEP) is None:
                     self._attr_target_temp_sleep = self._target_temp_base - 5
                     _LOGGER.warning(
@@ -306,6 +308,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
                     )
                 else:
                     self._attr_target_temp_sleep = float(old_state.attributes[ATTR_TEMPERATURE_SLEEP])
+            if self._attr_target_temp_away is None:
                 if old_state.attributes.get(ATTR_TEMPERATURE_AWAY) is None:
                     self._attr_target_temp_away = self._target_temp_base - 5
                     _LOGGER.warning(

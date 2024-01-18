@@ -245,8 +245,25 @@ class EnOceanTemperatureSensor(EnOceanSensor):
         self._scale_max = scale_max
         self.range_from = range_from
         self.range_to = range_to
-        self.setpoint = 0
-        self.slideswitch = 0
+        self.setpoint = None
+        self.slideswitch = None
+
+    async def async_added_to_hass(self) -> None:
+        """Call when entity about to be added to hass."""
+        # If not None, we got an initial value.
+        await super().async_added_to_hass()
+
+        if (old_state := await self.async_get_last_state()) is not None:
+            # state is restored in EnOceanSensor class
+            # restore attributes
+            if self.setpoint is None and old_state.attributes.get(ATTR_SETPOINT):
+                self.setpoint = old_state.attributes.get(ATTR_SETPOINT)
+            else:
+                self.setpoint = 0
+            if self.slideswitch is None and old_state.attributes.get(ATTR_SLIDESWITCH):
+                self.slideswitch = old_state.attributes.get(ATTR_SLIDESWITCH)
+            else:
+                self.slideswitch = 0
 
     @property
     def extra_state_attributes(self):
