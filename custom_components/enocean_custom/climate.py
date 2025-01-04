@@ -38,13 +38,13 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     UnitOfTemperature
 )
-from homeassistant.core import HomeAssistant, callback, State, CoreState
+from homeassistant.core import HomeAssistant, callback, State, CoreState, Event
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.reload import async_setup_reload_service
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers import entity_platform, service, entity_component
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType, EventType
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.event import (
     EventStateChangedData,
     async_track_state_change_event,
@@ -184,7 +184,7 @@ async def async_setup_platform(
         domain=CLIMATE_DOMAIN,
         platform_name=DOMAIN,
         platform=None,
-        scan_interval=60,
+        scan_interval=timedelta(seconds=60),
         entity_namespace=CLIMATE_DOMAIN,
         )
     platform.async_register_entity_service('climate_teach_in_actor', {}, "teach_in_actor")
@@ -225,7 +225,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
         self._sensor_target_temp_range = sensor_target_temp_range
         self._sensor_target_temp_tolerance = sensor_target_temp_tolerance
         self._target_temp_reduction_night = target_temp_reduction_night
-        self._attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE
+        self._attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
         self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
         self._attr_hvac_mode = None
         self._attr_preset_mode = PRESET_NONE
@@ -458,7 +458,7 @@ class EnOceanClimate(EnOceanEntity, ClimateEntity, RestoreEntity):
             self.async_write_ha_state()
 
     async def _async_sensor_changed(
-        self, event: EventType[EventStateChangedData]
+        self, event: Event[EventStateChangedData]
     ) -> None:
         """Handle temperature changes."""
         new_state = event.data["new_state"]
