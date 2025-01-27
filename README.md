@@ -102,12 +102,12 @@ target:
     - climate.heating_controller_livingroom
 ```
 
-Repeat the procedure to theach-in the digital switch sensor to the heating controller.
+Repeat the procedure to teach-in the digital switch sensor to the heating controller.
 
 Teach-in the digital switch sensor for entity `climate.heating_controller_livingroom`:
 
 ```yaml
-service: enocean_custom.climate_teach_in_actor
+service: enocean_custom.climate_teach_in_actor_switch
 target:
   entity_id:
     - climate.heating_controller_livingroom
